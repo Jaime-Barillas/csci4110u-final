@@ -1,6 +1,9 @@
 build/
-subprojects/packagecache
-# glfw is managed by meson.
+handin/
+subprojects/packagecache/
+
+# Projects managed by meson.
 subprojects/glfw-*
+subprojects/stumpless
 
 log.txt

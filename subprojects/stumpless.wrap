@@ -1,0 +1,9 @@
+[wrap-git]
+method = cmake
+url = https://github.com/goatshriek/stumpless.git
+revision = v2.2.0
+depth = 1
+
+[provide]
+stumpless = stumpless_dep
+

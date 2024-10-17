@@ -1,7 +1,9 @@
 #include "shader_manager.hpp"
 #include "FileWatch.hpp"
+#include "src/logging.hpp"
 #include <fstream>
 #include <sstream>
+#include <stumpless.h>
 
 std::string ShaderManager::slurp(const std::string &path) const {
   std::ifstream file{path};
@@ -23,6 +25,7 @@ void ShaderManager::compileShader(Shader &shader) {
   const char *source = source_str.c_str();
   GLuint shader_id = 0;
 
+  stump_d_message(log_target_chain, "  Compiling %s", shader.path.c_str());
   shader_id = glCreateShader(shader.type);
   glShaderSource(shader_id, 1, &source, NULL);
   glCompileShader(shader_id);
@@ -38,7 +41,7 @@ void ShaderManager::compileShader(Shader &shader) {
 void ShaderManager::compileProgram(ShaderProgram &program) {
   GLuint program_id = 0;
 
-  printf("Compiling %s shaders\n", program.name.c_str());
+  stump_d_message(log_target_chain, "Compiling %s shaders:", program.name.c_str());
   program_id = glCreateProgram();
 
   for(auto &shader : program.shaders) {

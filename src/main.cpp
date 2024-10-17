@@ -6,7 +6,10 @@
 #include <stdexcept>
 #include "window.hpp"
 #include "shader_manager.hpp"
+#include <stumpless.h>
+#include "logging.hpp"
 
+struct stumpless_target *log_target_chain;
 
 class Program : public Window {
 public:
@@ -56,6 +59,16 @@ ShaderManager shader_manager;
 };
 
 int main() {
+  auto stdout_target = stumpless_open_stderr_target("log");
+  auto file_target = stumpless_open_file_target("log.txt");
+  log_target_chain = stumpless_new_chain("log-chain");
+  stumpless_add_target_to_chain(log_target_chain, stdout_target);
+  stumpless_add_target_to_chain(log_target_chain, file_target);
+
+  stump_i_message(log_target_chain, "//-------------------------//");
+  stump_i_message(log_target_chain, "//        CSCI4110U        //");
+  stump_i_message(log_target_chain, "//-------------------------//");
+
   Program *window;
   try {
     window = new Program({.width = 1152, .height = 720, .title = "Lab 5"});
@@ -63,4 +76,7 @@ int main() {
   } catch(std::runtime_error &err) {
     return -1;
   }
+
+  stumpless_close_chain_and_contents(log_target_chain);
+  stumpless_free_all();
 }

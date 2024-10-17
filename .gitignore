@@ -2,3 +2,5 @@ build/
 subprojects/packagecache
 # glfw is managed by meson.
 subprojects/glfw-*
+
+log.txt

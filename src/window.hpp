@@ -1,10 +1,6 @@
 #ifndef CSCI_4110U_WINDOW_H
 #define CSCI_4110U_WINDOW_H
 
-#ifdef _WIN32
-#defin GLFW_DLL
-#endif
-
 #define GLFW_INCLUDE_NONE
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>

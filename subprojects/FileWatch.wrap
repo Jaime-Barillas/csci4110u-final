@@ -1,0 +1,5 @@
+[wrap-git]
+patch_directory = FileWatch
+url = https://github.com/ThomasMonkman/filewatch.git
+depth = 1
+revision = a59891baf375b73ff28144973a6fafd3fe40aa21

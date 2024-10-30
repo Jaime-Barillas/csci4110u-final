@@ -1,9 +1,10 @@
 build/
 build-static/
 handin/
-subprojects/
 
 # Projects managed by meson.
+subprojects/*
 !subprojects/*.wrap
+!subprojects/packagefiles/
 
 log.txt

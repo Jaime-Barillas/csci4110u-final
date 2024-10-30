@@ -1,4 +1,5 @@
 // Use glad headers.
+#include "spdlog/logger.h"
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 #undef GLAD_GL_IMPLEMENTATION
@@ -6,10 +7,12 @@
 #include <stdexcept>
 #include "window.hpp"
 #include "shader_manager.hpp"
-#include <stumpless.h>
-#include "logging.hpp"
 
-struct stumpless_target *log_target_chain;
+#include "spdlog/spdlog.h"
+#include "spdlog/common.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include <memory>
 
 class Program : public Window {
 public:
@@ -59,15 +62,17 @@ ShaderManager shader_manager;
 };
 
 int main() {
-  auto stdout_target = stumpless_open_stderr_target("log");
-  auto file_target = stumpless_open_file_target("log.txt");
-  log_target_chain = stumpless_new_chain("log-chain");
-  stumpless_add_target_to_chain(log_target_chain, stdout_target);
-  stumpless_add_target_to_chain(log_target_chain, file_target);
+  auto console_target = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  auto file_target = std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true);
+  spdlog::sinks_init_list targets = {file_target, console_target};
+  auto logger = std::make_shared<spdlog::logger>("logger", targets);
+  logger->set_level(spdlog::level::trace);
+  spdlog::register_logger(logger);
+  spdlog::set_default_logger(logger);
 
-  stump_i_message(log_target_chain, "//-------------------------//");
-  stump_i_message(log_target_chain, "//        CSCI4110U        //");
-  stump_i_message(log_target_chain, "//-------------------------//");
+  spdlog::info("//-------------------------//");
+  spdlog::info("//        CSCI4110U        //");
+  spdlog::info("//-------------------------//");
 
   Program *window;
   try {
@@ -76,7 +81,4 @@ int main() {
   } catch(std::runtime_error &err) {
     return -1;
   }
-
-  stumpless_close_chain_and_contents(log_target_chain);
-  stumpless_free_all();
 }

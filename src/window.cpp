@@ -1,10 +1,10 @@
 #include "window.hpp"
 
 #include <stdexcept>
-#include <stdio.h>
+#include "spdlog/spdlog.h"
 
 void Window::logError(int error_code, const char *description) {
-  printf("GLFW: %s\n", description);
+  spdlog::info("GLFW: {}", description);
 }
 
 Window::Window(WindowOpts opts) {

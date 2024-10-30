@@ -6,14 +6,15 @@ project('lab5', 'cpp',
 glfw = subproject('glfw')
 glad = subproject('glad')
 FileWatch = subproject('FileWatch')
-stumpless = subproject('stumpless', default_options: ['warning_level=0'])
+spdlog = subproject('spdlog')
 
 deps = [
   glfw.get_variable('glfw_dep'),
   glad.get_variable('glad_dep'),
   FileWatch.get_variable('FileWatch_dep'),
-  stumpless.get_variable('stumpless_dep'),
+  spdlog.get_variable('spdlog_dep'),
 ]
+
 executable('lab5',
    'src/main.cpp',
    'src/window.cpp',

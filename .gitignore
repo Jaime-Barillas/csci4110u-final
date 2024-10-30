@@ -1,9 +1,9 @@
 build/
+build-static/
 handin/
-subprojects/packagecache/
+subprojects/
 
 # Projects managed by meson.
-subprojects/glfw-*
-subprojects/stumpless
+!subprojects/*.wrap
 
 log.txt

@@ -19,6 +19,7 @@ struct WindowOpts {
 
 class Window {
   static void logError(int error_code, const char *description);
+  static void glError(void *ret, const char *name, GLADapiproc proc, int len_args, ...);
 
   protected:
     GLFWwindow *ptr = nullptr;

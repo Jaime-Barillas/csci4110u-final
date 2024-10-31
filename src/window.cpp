@@ -3,8 +3,17 @@
 #include <stdexcept>
 #include "spdlog/spdlog.h"
 
+#include "gl_errors.hpp"
+
 void Window::logError(int error_code, const char *description) {
   spdlog::info("GLFW: {}", description);
+}
+
+void Window::glError(void *ret, const char *name, GLADapiproc proc, int len_args, ...) {
+  GLenum error = glad_glGetError();
+  if (error == GL_NO_ERROR) return;
+
+  spdlog::error("{}[{}]: {}", name, getGLErrorCodeString(error), getGLErrorString(name, error));
 }
 
 Window::Window(WindowOpts opts) {
@@ -38,6 +47,8 @@ Window::Window(WindowOpts opts) {
     glfwTerminate();
     throw std::runtime_error("gladLoadGL");
   }
+
+  gladSetGLPostCallback(&glError);
 
   glfwSwapInterval(1);
 }

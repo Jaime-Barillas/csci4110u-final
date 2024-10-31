@@ -7,12 +7,14 @@ glfw = subproject('glfw')
 glad = subproject('glad')
 FileWatch = subproject('FileWatch')
 spdlog = subproject('spdlog')
+glm = subproject('glm')
 
 deps = [
   glfw.get_variable('glfw_dep'),
   glad.get_variable('glad_dep'),
   FileWatch.get_variable('FileWatch_dep'),
   spdlog.get_variable('spdlog_dep'),
+  glm.get_variable('glm_dep'),
 ]
 
 executable('lab5',

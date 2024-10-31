@@ -1,23 +1,33 @@
 // Use glad headers.
-#include "spdlog/logger.h"
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 #undef GLAD_GL_IMPLEMENTATION
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 #include <stdexcept>
 #include "window.hpp"
 #include "shader_manager.hpp"
 
 #include "spdlog/spdlog.h"
+#include "spdlog/logger.h"
 #include "spdlog/common.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include <memory>
 
 class Program : public Window {
+  static void framebufferResized(GLFWwindow *window, int width, int height) {
+    auto prog = (Program*)glfwGetWindowUserPointer(window);
+    glViewport(0, 0, width, height);
+  }
+
 public:
   Program() : Window() {};
   Program(WindowOpts opts) : Window(opts) {
+    glfwSetWindowUserPointer(ptr, this);
+    glfwSetFramebufferSizeCallback(ptr, framebufferResized);
+
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), points, GL_STATIC_DRAW);

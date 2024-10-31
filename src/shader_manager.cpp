@@ -1,9 +1,11 @@
-#include "shader_manager.hpp"
-#include "FileWatch.hpp"
 #include <fstream>
 #include <sstream>
 
-#include "spdlog/spdlog.h"
+#include <FileWatch.hpp>
+#include <spdlog/spdlog.h>
+
+#include "shader_manager.hpp"
+
 
 std::string ShaderManager::slurp(const std::string &path) const {
   std::ifstream file{path};

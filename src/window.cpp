@@ -1,9 +1,9 @@
-#include "window.hpp"
-
 #include <stdexcept>
-#include "spdlog/spdlog.h"
+
+#include <spdlog/spdlog.h>
 
 #include "gl_errors.hpp"
+#include "window.hpp"
 
 void Window::logError(int error_code, const char *description) {
   spdlog::info("GLFW: {}", description);

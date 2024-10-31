@@ -1,13 +1,14 @@
 #ifndef CSCI_4110U_SHADER_MANAGER_H
 #define CSCI_4110U_SHADER_MANAGER_H
 
-#include <glad/gl.h>
 #include <map>
 #include <string>
 #include <vector>
 #include <queue>
 #include <mutex>
-#include "FileWatch.hpp"
+
+#include <FileWatch.hpp>
+#include <glad/gl.h>
 
 /* It is assumed that there is a _one-to-one_ correspondence between shader
    files, shader objects, and shader programs. ShaderManager will not work

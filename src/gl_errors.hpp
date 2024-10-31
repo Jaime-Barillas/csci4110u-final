@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-#include "glad/gl.h"
+#include <glad/gl.h>
 
 static std::map<GLenum, std::string> gl_error_codes{
   {GL_NO_ERROR, "GL_NO_ERROR"},

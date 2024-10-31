@@ -1,20 +1,20 @@
+#include <memory>
+#include <stdexcept>
+
 // Use glad headers.
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 #undef GLAD_GL_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/logger.h>
+#include <spdlog/common.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
-#include <stdexcept>
 #include "window.hpp"
 #include "shader_manager.hpp"
-
-#include "spdlog/spdlog.h"
-#include "spdlog/logger.h"
-#include "spdlog/common.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/sinks/basic_file_sink.h"
-#include <memory>
 
 class Program : public Window {
   static void framebufferResized(GLFWwindow *window, int width, int height) {

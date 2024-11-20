@@ -17,6 +17,20 @@
 #include "shader_manager.hpp"
 
 class Program : public Window {
+  ShaderManager shader_manager;
+  GLuint vbo = 0;
+  GLuint vao = 0;
+
+  float screen_quad[6 * 3] {
+    -1.0f, -1.0f, 0.0f,
+     1.0f,  1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+
+    -1.0f, -1.0f, 0.0f,
+     1.0f, -1.0f, 0.0f,
+     1.0f,  1.0f, 0.0f,
+};
+
   static void framebufferResized(GLFWwindow *window, int width, int height) {
     auto prog = (Program*)glfwGetWindowUserPointer(window);
     glViewport(0, 0, width, height);
@@ -28,9 +42,11 @@ public:
     glfwSetWindowUserPointer(ptr, this);
     glfwSetFramebufferSizeCallback(ptr, framebufferResized);
 
+    glViewport(0, 0, opts.width, opts.height);
+
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), points, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(screen_quad), screen_quad, GL_STATIC_DRAW);
 
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -38,36 +54,26 @@ public:
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    //shader_manager = new ShaderManager();
     shader_manager.compileAndWatch({
-      .name = "shader",
+      .name = "scene",
       .shaders = {
-        Shader{.path = "src/vert.glsl", .type = GL_VERTEX_SHADER},
-        Shader{.path = "src/frag.glsl", .type = GL_FRAGMENT_SHADER}
+        Shader{.path = "shaders/vert.glsl", .type = GL_VERTEX_SHADER},
+        Shader{.path = "shaders/frag.glsl", .type = GL_FRAGMENT_SHADER}
       }
     });
   };
 
-  float points[9] {
-   0.0f,  0.5f,  0.0f,
-   0.5f, -0.5f,  0.0f,
-  -0.5f, -0.5f,  0.0f
-};
-  GLuint vbo = 0;
-  GLuint vao = 0;
-ShaderManager shader_manager;
-
   void handleInput(int key) override {
 
   }
+
   void draw() override {
     shader_manager.recompilePending();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_manager.get("shader"));
+    glUseProgram(shader_manager.get("scene"));
     glBindVertexArray(vao);
-    // draw points 0-3 from the currently bound VAO with current in-use shader
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
   }
 };
 
@@ -86,7 +92,7 @@ int main() {
 
   Program *window;
   try {
-    window = new Program({.width = 1152, .height = 720, .title = "Lab 5"});
+    window = new Program({.width = 1152, .height = 720, .title = "RayMarcher - SDF"});
     window->run();
   } catch(std::runtime_error &err) {
     return -1;

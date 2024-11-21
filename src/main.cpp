@@ -7,6 +7,8 @@
 #undef GLAD_GL_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>  // glm::value_ptr
 #include <spdlog/spdlog.h>
 #include <spdlog/logger.h>
 #include <spdlog/common.h>
@@ -17,6 +19,11 @@
 #include "shader_manager.hpp"
 
 class Program : public Window {
+  glm::vec3 mouse_pos_old;  // Used to calculate mouse delta for shaders.
+  glm::vec3 resolution;     // Window resolution in pixels.
+  double time_start;        // Used to calculate total playback time.
+  double time_old;          // Used to calculate time delta.
+
   ShaderManager shader_manager;
   GLuint vbo = 0;
   GLuint vao = 0;
@@ -33,6 +40,8 @@ class Program : public Window {
 
   static void framebufferResized(GLFWwindow *window, int width, int height) {
     auto prog = (Program*)glfwGetWindowUserPointer(window);
+    prog->resolution.x = width;
+    prog->resolution.y = height;
     glViewport(0, 0, width, height);
   }
 
@@ -61,6 +70,11 @@ public:
         Shader{.path = "shaders/frag.glsl", .type = GL_FRAGMENT_SHADER}
       }
     });
+
+    mouse_pos_old = glm::vec3(0.0f);
+    resolution = glm::vec3(opts.width, opts.height, 0.0f);
+    time_start = glfwGetTime();
+    time_old = glfwGetTime();
   };
 
   void handleInput(int key) override {
@@ -70,8 +84,31 @@ public:
   void draw() override {
     shader_manager.recompilePending();
 
+    double x, y;
+    glfwGetCursorPos(ptr, &x, &y);
+    y = resolution.y - y;  // Invert y-axis to make positive up.
+    auto mouse_delta = glm::normalize(glm::vec3(x, y, 0.0f) - mouse_pos_old);
+    mouse_pos_old.x = x;
+    mouse_pos_old.y = y;
+
+    auto time_now = glfwGetTime();
+    float time = (float)(time_now - time_start);
+    float time_delta = (float)(time_now - time_old);
+    time_old = time_now;
+
+    auto scene = shader_manager.get("scene");
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shader_manager.get("scene"));
+    glUseProgram(scene);
+
+    GLuint imouse_delta = glGetUniformLocation(scene, "imouse_delta");
+    GLuint iresolution = glGetUniformLocation(scene, "iresolution");
+    GLuint itime = glGetUniformLocation(scene, "itime");
+    GLuint itime_delta = glGetUniformLocation(scene, "itime_delta");
+    glUniform3fv(imouse_delta, 1, glm::value_ptr(mouse_delta));
+    glUniform3fv(iresolution, 1, glm::value_ptr(resolution));
+    glUniform1f(itime, time);
+    glUniform1f(itime_delta, time_delta);
+
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
   }

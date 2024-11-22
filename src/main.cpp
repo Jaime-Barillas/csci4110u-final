@@ -19,7 +19,7 @@
 #include "shader_manager.hpp"
 
 class Program : public Window {
-  glm::vec3 mouse_pos_old;  // Used to calculate mouse delta for shaders.
+  glm::vec3 mouse_pos;
   glm::vec3 resolution;     // Window resolution in pixels.
   double time_start;        // Used to calculate total playback time.
   double time_old;          // Used to calculate time delta.
@@ -71,7 +71,6 @@ public:
       }
     });
 
-    mouse_pos_old = glm::vec3(0.0f);
     resolution = glm::vec3(opts.width, opts.height, 0.0f);
     time_start = glfwGetTime();
     time_old = glfwGetTime();
@@ -85,11 +84,12 @@ public:
     shader_manager.recompilePending();
 
     double x, y;
+    int mouse_left_down = glfwGetMouseButton(ptr, GLFW_MOUSE_BUTTON_LEFT);
     glfwGetCursorPos(ptr, &x, &y);
     y = resolution.y - y;  // Invert y-axis to make positive up.
-    auto mouse_delta = glm::normalize(glm::vec3(x, y, 0.0f) - mouse_pos_old);
-    mouse_pos_old.x = x;
-    mouse_pos_old.y = y;
+    mouse_pos.x = x;
+    mouse_pos.y = y;
+    mouse_pos.z = mouse_left_down == GLFW_PRESS ? 1 : 0;
 
     auto time_now = glfwGetTime();
     float time = (float)(time_now - time_start);
@@ -100,11 +100,11 @@ public:
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(scene);
 
-    GLuint imouse_delta = glGetUniformLocation(scene, "imouse_delta");
+    GLuint imouse = glGetUniformLocation(scene, "imouse");
     GLuint iresolution = glGetUniformLocation(scene, "iresolution");
     GLuint itime = glGetUniformLocation(scene, "itime");
     GLuint itime_delta = glGetUniformLocation(scene, "itime_delta");
-    glUniform3fv(imouse_delta, 1, glm::value_ptr(mouse_delta));
+    glUniform3fv(imouse, 1, glm::value_ptr(mouse_pos));
     glUniform3fv(iresolution, 1, glm::value_ptr(resolution));
     glUniform1f(itime, time);
     glUniform1f(itime_delta, time_delta);

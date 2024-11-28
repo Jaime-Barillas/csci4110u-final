@@ -8,6 +8,7 @@ glad = subproject('glad')
 FileWatch = subproject('FileWatch')
 spdlog = subproject('spdlog')
 glm = subproject('glm')
+imgui = subproject('imgui')
 
 deps = [
   glfw.get_variable('glfw_dep'),
@@ -15,6 +16,7 @@ deps = [
   FileWatch.get_variable('FileWatch_dep'),
   spdlog.get_variable('spdlog_dep'),
   glm.get_variable('glm_dep'),
+  imgui.get_variable('imgui_dep'),
 ]
 
 executable('lab5',

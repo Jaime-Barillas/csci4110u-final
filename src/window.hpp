@@ -2,7 +2,7 @@
 #define CSCI_4110U_WINDOW_H
 
 #define GLFW_INCLUDE_NONE
-#include <glad/gl.h>
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
 struct WindowOpts {

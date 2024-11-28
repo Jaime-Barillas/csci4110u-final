@@ -3,7 +3,7 @@
 
 // Use glad headers.
 #define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
+#include <GL/gl.h>
 #undef GLAD_GL_IMPLEMENTATION
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -14,6 +14,9 @@
 #include <spdlog/common.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "window.hpp"
 #include "shader_manager.hpp"
@@ -74,13 +77,32 @@ public:
     resolution = glm::vec3(opts.width, opts.height, 0.0f);
     time_start = glfwGetTime();
     time_old = glfwGetTime();
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui_ImplGlfw_InitForOpenGL(ptr, true);
+    ImGui_ImplOpenGL3_Init();
   };
+
+  ~Program() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+  }
 
   void handleInput(int key) override {
 
   }
 
   void draw() override {
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+
     shader_manager.recompilePending();
 
     double x, y;
@@ -111,6 +133,9 @@ public:
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   }
 };
 

@@ -5,6 +5,7 @@ const int   MAX_ITERATIONS = 128;
 const float EPS            = 0.001;
 const float CAM_DEP        = 1.5;  // Near "plane" is 1.5 units from the camera
 const float FAR            = 20.0;
+const float UNKNOWN_MAT    = 0.0; // Material ID of unknown/no object
 
 const vec3 UP = vec3(0.0, 1.0, 0.0);
 /***** Constants *****/
@@ -16,44 +17,77 @@ uniform float itime;
 uniform float itime_delta;
 /***** Uniforms *****/
 
+/***** SDF Declarations *****/
+float sdfSphere(in vec3 point, in float radius);
+float sdfBox(in vec3 point, in vec3 half_size);
+/***** SDF Declarations *****/
+
 out vec4 frag_colour;
 
-float scene(in vec3 p) {
-    float d = length(p) - 0.25;
-    float d2 = p.y - (-0.25);
-    return min(d, d2);
+vec2 scene(in vec3 point) {
+    vec2 res = vec2(FAR, UNKNOWN_MAT);
+
+    float d = sdfSphere(point, 0.25);
+    res = vec2(d, 1.0);
+
+    float d2 = point.y - (-0.25);
+    if (d2 < res.x) res = vec2(d2, 2.0);
+
+    float d3 = sdfBox(point - vec3(0.0, -0.0, 0.0), vec3(0.4, 0.1, 0.1));
+    if (d3 < res.x) res = vec2(d3, 3.0);
+
+    return res;
 }
 
 // Tetrahedron Technique: https://iquilezles.org/articles/normalsSDF/
-vec3 sceneNormal(in vec3 p) {
+vec3 sceneNormal(in vec3 point) {
     // NOTE: If long compile times: See link above for fix.
     const float h = 0.0001;
     const vec2  k = vec2(1.0, -1.0);
-    return normalize(k.xyy * scene(p + k.xyy*h) +
-                     k.yyx * scene(p + k.yyx*h) +
-                     k.yxy * scene(p + k.yxy*h) +
-                     k.xxx * scene(p + k.xxx*h));
+    return normalize(k.xyy * scene(point + k.xyy*h).x +
+                     k.yyx * scene(point + k.yyx*h).x +
+                     k.yxy * scene(point + k.yxy*h).x +
+                     k.xxx * scene(point + k.xxx*h).x);
 }
 
-float castRay(in vec3 ro, in vec3 rd) {
-    float t = 0.0;
+vec3 sceneColor(float id) {
+    vec3 material;
+
+    if (id < 0.5) {
+        material = vec3(1.0, 0.0, 1.0);
+    } else if (id < 1.5) {
+        material = vec3(0.18, 0.75, 0.23);
+    } else if (id < 2.5) {
+        material = vec3(0.2);
+    }
+    else {
+        material = vec3(0.05, 0.07, 0.10);
+    }
+
+    return material;
+}
+
+vec2 castRay(in vec3 ro, in vec3 rd) {
+    float t = 0.0; // Accumulated distance.
+    float m = -1.0; // Material ID.
     for (int i = 0; i < MAX_ITERATIONS; i++) {
         vec3 p = ro + t*rd;
-        float d = scene(p);
-        if (d < EPS) {  // Hit a surface or inside of one.
+        vec2 res = scene(p);
+        m = res.y;
+        if (res.x < EPS) {  // Hit a surface or inside of one.
             break;
         }
 
-        t += d;
+        t += res.x;
         if (t > FAR) {  // Hit the background.
             break;
         }
     }
     if (t > FAR) {
-        t = -1.0;
+        m = -1.0;
     }
 
-    return t;
+    return vec2(t, m);
 }
 
 void main() {
@@ -75,14 +109,14 @@ void main() {
     vec3 colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y;
     colour      = mix(colour, vec3(0.7, 0.75, 0.8), exp(-10.0 * rd.y));
 
-    float t = castRay(ro, rd);
-    if (t > 0.0) {
-        // Base material reasoning: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=WUc39s8PI2aatbFp&t=2393
-        vec3 base_material = vec3(0.2);
-        vec3 sun_dir       = normalize(vec3(0.8, 0.4, 0.2));
-
-        vec3 point  = ro + t*rd;
+    vec2 t = castRay(ro, rd);
+    if (t.y > 0.0) {
+        vec3 point  = ro + t.x*rd;
         vec3 normal = sceneNormal(point);
+
+        // Base material reasoning: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=WUc39s8PI2aatbFp&t=2393
+        vec3 base_material = sceneColor(t.y);
+        vec3 sun_dir       = normalize(vec3(0.8, 0.4, 0.2));
 
         // sun_dif: Key light amount, main light, most directional.
         // sky_dif: Field light amount (sky).
@@ -92,7 +126,7 @@ void main() {
         float sky_dif     = clamp(0.5 + 0.5 * dot(normal,  UP), 0.0, 1.0);
         float bounce_diff = clamp(0.5 + 0.5 * dot(normal, -UP), 0.0, 1.0);
         // NOTE: p + normal * EPS offsets the ray origin to prevent self intersection.
-        float sun_sha     = step(castRay(point + (normal * EPS), sun_dir), 0.0);
+        float sun_sha     = step(castRay(point + (normal * EPS), sun_dir).y, 0.0);
 
         // Key light intensity ~10, Field light (sky) ~1. See youtube video above.
         // Bounce light: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=DyACc5QO-klYfaRR&t=2558

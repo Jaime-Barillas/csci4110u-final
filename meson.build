@@ -1,4 +1,4 @@
-project('lab5', 'cpp',
+project('final', 'cpp',
   version : '0.1',
   default_options : ['warning_level=3', 'cpp_std=c++20', 'default_library=static']
 )
@@ -19,7 +19,7 @@ deps = [
   imgui.get_variable('imgui_dep'),
 ]
 
-executable('lab5',
+executable('final',
    'src/main.cpp',
    'src/window.cpp',
    'src/shader_manager.cpp',

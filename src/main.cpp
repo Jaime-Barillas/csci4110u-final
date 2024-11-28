@@ -21,7 +21,15 @@
 #include "window.hpp"
 #include "shader_manager.hpp"
 
+#define MODE_3D_NONE 1
+#define MODE_3D_LAYERED 2
+#define MODE_3D_FULL 3
+
 class Program : public Window {
+  ImGuiIO *io;
+  int mode_3d;
+  bool draw_debug_menu;
+
   glm::vec3 mouse_pos;
   glm::vec3 resolution;     // Window resolution in pixels.
   double time_start;        // Used to calculate total playback time.
@@ -39,7 +47,7 @@ class Program : public Window {
     -1.0f, -1.0f, 0.0f,
      1.0f, -1.0f, 0.0f,
      1.0f,  1.0f, 0.0f,
-};
+  };
 
   static void framebufferResized(GLFWwindow *window, int width, int height) {
     auto prog = (Program*)glfwGetWindowUserPointer(window);
@@ -78,13 +86,16 @@ public:
     time_start = glfwGetTime();
     time_old = glfwGetTime();
 
+    // Debug Menu.
+    mode_3d = MODE_3D_NONE;
+    draw_debug_menu = false;
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io = &ImGui::GetIO();
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui_ImplGlfw_InitForOpenGL(ptr, true);
     ImGui_ImplOpenGL3_Init();
-  };
+  }
 
   ~Program() {
     ImGui_ImplOpenGL3_Shutdown();
@@ -92,16 +103,28 @@ public:
     ImGui::DestroyContext();
   }
 
-  void handleInput(int key) override {
-
+  void handleInput(int key, int action) override {
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+      draw_debug_menu = !draw_debug_menu;
+    }
   }
 
   void draw() override {
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
+    if (draw_debug_menu) {
+      ImGui_ImplOpenGL3_NewFrame();
+      ImGui_ImplGlfw_NewFrame();
+      ImGui::NewFrame();
+      {
+        ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f));
+        ImGui::Begin("Debug");
+        ImGui::Text("Fps: %.0f (%.3f)", io->Framerate, 1000.0f / io->Framerate);
+        ImGui::SeparatorText("Anaglyph 3D");
+        ImGui::RadioButton("None", &mode_3d, MODE_3D_NONE); ImGui::SameLine();
+        ImGui::RadioButton("Layered", &mode_3d, MODE_3D_LAYERED); ImGui::SameLine();
+        ImGui::RadioButton("Full", &mode_3d, MODE_3D_FULL);
+      }
+      ImGui::End();
+    }
 
     shader_manager.recompilePending();
 
@@ -134,8 +157,10 @@ public:
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (draw_debug_menu) {
+      ImGui::Render();
+      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
   }
 };
 

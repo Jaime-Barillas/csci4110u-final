@@ -16,6 +16,16 @@ void Window::glError(void *ret, const char *name, GLADapiproc proc, int len_args
   spdlog::error("{}[{}]: {}", name, getGLErrorCodeString(error), getGLErrorString(name, error));
 }
 
+void Window::glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+  auto win = static_cast<Window*>(glfwGetWindowUserPointer(window));
+  if (!win) {
+    spdlog::error("GLFW: Window user pointer not set (window.hpp glfwKeyCallback)");
+    return;
+  }
+
+  win->handleInput(key, action);
+}
+
 Window::Window(WindowOpts opts) {
   glfwSetErrorCallback(Window::logError);
 
@@ -40,6 +50,7 @@ Window::Window(WindowOpts opts) {
     throw std::runtime_error("glfwCreateWindow");
   }
 
+  glfwSetKeyCallback(ptr, glfwKeyCallback);
   glfwMakeContextCurrent(ptr);
 
   if (!gladLoadGL(glfwGetProcAddress)) {
@@ -62,7 +73,6 @@ void Window::run() {
   while (!glfwWindowShouldClose(ptr)) {
     glfwPollEvents();
 
-    handleInput(1);
     draw();
 
     glfwSwapBuffers(ptr);

@@ -20,6 +20,7 @@ struct WindowOpts {
 class Window {
   static void logError(int error_code, const char *description);
   static void glError(void *ret, const char *name, GLADapiproc proc, int len_args, ...);
+  static void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
   protected:
     GLFWwindow *ptr = nullptr;
@@ -30,7 +31,7 @@ class Window {
   public:
     ~Window();
     void run();
-    virtual void handleInput(int key) = 0;
+    virtual void handleInput(int key, int action) = 0;
     virtual void draw() = 0;
 };
 

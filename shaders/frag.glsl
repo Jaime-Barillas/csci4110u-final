@@ -22,7 +22,8 @@ float sdfSphere(in vec3 point, in float radius);
 float sdfBox(in vec3 point, in vec3 half_size);
 /***** SDF Declarations *****/
 
-out vec4 frag_colour;
+layout(location = 0) out vec4 frag_colour;
+layout(location = 1) out vec4 iteration_colour;
 
 vec2 scene(in vec3 point) {
     vec2 res = vec2(FAR, UNKNOWN_MAT);
@@ -67,10 +68,11 @@ vec3 sceneColor(float id) {
     return material;
 }
 
-vec2 castRay(in vec3 ro, in vec3 rd) {
+vec3 castRay(in vec3 ro, in vec3 rd) {
     float t = 0.0; // Accumulated distance.
     float m = -1.0; // Material ID.
-    for (int i = 0; i < MAX_ITERATIONS; i++) {
+    int i;
+    for (i = 0; i < MAX_ITERATIONS; i++) {
         vec3 p = ro + t*rd;
         vec2 res = scene(p);
         m = res.y;
@@ -87,7 +89,7 @@ vec2 castRay(in vec3 ro, in vec3 rd) {
         m = -1.0;
     }
 
-    return vec2(t, m);
+    return vec3(t, m, i);
 }
 
 void main() {
@@ -109,7 +111,7 @@ void main() {
     vec3 colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y;
     colour      = mix(colour, vec3(0.7, 0.75, 0.8), exp(-10.0 * rd.y));
 
-    vec2 t = castRay(ro, rd);
+    vec3 t = castRay(ro, rd);
     if (t.y > 0.0) {
         vec3 point  = ro + t.x*rd;
         vec3 normal = sceneNormal(point);
@@ -138,5 +140,6 @@ void main() {
     // Gamma correction. 0.4545 ~standard encoding for computer displays/sRGB.
     colour      = pow(colour, vec3(0.4545));
     frag_colour = vec4(colour, 1);
+    iteration_colour = vec4(t.zzz / MAX_ITERATIONS, 1.0);
 }
 

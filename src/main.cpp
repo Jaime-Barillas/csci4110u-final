@@ -215,9 +215,13 @@ public:
       ImGui_ImplGlfw_NewFrame();
       ImGui::NewFrame();
       {
+        auto image_size = ImVec2(resolution.x / 6, resolution.y / 6);
+
         ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f));
         ImGui::Begin("Debug");
         ImGui::Text("Fps: %.0f (%.3f)", io->Framerate, 1000.0f / io->Framerate);
+        ImGui::Image((ImTextureID)(intptr_t)iterations_texture, image_size);
+
         ImGui::SeparatorText("Anaglyph 3D");
         ImGui::RadioButton("None", &mode_3d, MODE_3D_NONE); ImGui::SameLine();
         ImGui::RadioButton("Layered", &mode_3d, MODE_3D_LAYERED); ImGui::SameLine();

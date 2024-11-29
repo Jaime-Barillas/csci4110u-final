@@ -92,6 +92,30 @@ vec3 castRay(in vec3 ro, in vec3 rd) {
     return vec3(t, m, i);
 }
 
+vec3 iterationColour(in float iterations) {
+    // Using oklab colour space: https://bottosson.github.io/posts/oklab/
+    // Specifically, this implementation: https://www.shadertoy.com/view/WtccD7
+    const vec3 low_its  = vec3(0.23, 0.191, -0.110);
+    const vec3 high_its = vec3(0.90, 0.000,  0.070);
+
+    const mat3 fwdA = mat3(
+        1.0,           1.0,           1.0,
+        0.3963377774, -0.1055613458, -0.0894841775,
+        0.2158037573, -0.0638541728, -1.2914855480
+    );
+    const mat3 fwdB = mat3(
+         4.0767245293, -1.2681437731, -0.0041119885,
+        -3.3072168827,  2.6093323231, -0.7034763098,
+         0.2307590544, -0.3411344290,  1.7068625689
+    );
+
+    float scale = iterations / MAX_ITERATIONS;
+    vec3 lms = mix(low_its, high_its, scale);
+
+    lms = fwdA * lms;
+    return fwdB * (lms*lms*lms);
+}
+
 void main() {
     // Map fragment coordinates to [-1, 1].
     vec2 coord = ((2 * gl_FragCoord.xy) - iresolution.xy) / iresolution.y;
@@ -140,6 +164,6 @@ void main() {
     // Gamma correction. 0.4545 ~standard encoding for computer displays/sRGB.
     colour      = pow(colour, vec3(0.4545));
     frag_colour = vec4(colour, 1);
-    iteration_colour = vec4(t.zzz / MAX_ITERATIONS, 1.0);
+    iteration_colour = vec4(pow(iterationColour(t.z), vec3(0.4545)), 1.0);
 }
 

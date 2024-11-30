@@ -232,7 +232,7 @@ public:
         ImGui::Text("Device: %s", renderer_name);
         ImGui::Text("Resolution: %.0fx%.0f", resolution.x, resolution.y);
         ImGui::Text("Fps: %.0f (%.3f)", io->Framerate, 1000.0f / io->Framerate);
-        ImGui::Image((ImTextureID)(intptr_t)iterations_texture, image_size);
+        ImGui::Image((ImTextureID)(intptr_t)iterations_texture, image_size, ImVec2(0, 1), ImVec2(1, 0));
 
         ImGui::SeparatorText("Anaglyph 3D");
         ImGui::RadioButton("None", &mode_3d, MODE_3D_NONE); ImGui::SameLine();

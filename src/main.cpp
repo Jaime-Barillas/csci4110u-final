@@ -29,6 +29,7 @@ class Program : public Window {
   ImGuiIO *io;
   int mode_3d;
   bool draw_debug_menu;
+  const GLubyte *renderer_name;
 
   glm::vec3 mouse_pos;
   glm::vec3 resolution;     // Window resolution in pixels.
@@ -86,6 +87,7 @@ public:
     glfwSetWindowUserPointer(ptr, this);
     glfwSetFramebufferSizeCallback(ptr, framebufferResized);
 
+    renderer_name = glGetString(GL_RENDERER);
     glViewport(0, 0, opts.width, opts.height);
 
     glGenBuffers(1, &vbo_quad);
@@ -227,6 +229,8 @@ public:
 
         ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f));
         ImGui::Begin("Debug");
+        ImGui::Text("Device: %s", renderer_name);
+        ImGui::Text("Resolution: %.0fx%.0f", resolution.x, resolution.y);
         ImGui::Text("Fps: %.0f (%.3f)", io->Framerate, 1000.0f / io->Framerate);
         ImGui::Image((ImTextureID)(intptr_t)iterations_texture, image_size);
 

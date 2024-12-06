@@ -53,8 +53,16 @@ float sdfHorseshoe2D(in vec2 point, in vec2 curve, in float inner_radius, in vec
     return length(max(point, 0.0)) + min(0.0, max(point.x, point.y));
 }
 
-float sdfVerticalCapsule(in vec3 point, in float height, in float radius) {
-  point.y -= clamp(point.y, 0.0, height);
-  return length(point) - radius;
+float sdfCutSphere(in vec3 p, in float r, in float h) {
+    // p = point, r = radius, h = height from top of sphere.
+    // sampling independent computations (only depend on shape)
+    float w = sqrt(r*r-h*h);
+
+    // sampling dependant computations
+    vec2 q = vec2( length(p.xz), p.y );
+    float s = max( (h-r)*q.x*q.x+w*w*(h+r-2.0*q.y), h*q.x-w*q.y );
+    return (s<0.0) ? length(q)-r :
+           (q.x<w) ? h - q.y     :
+                     length(q-vec2(w,h));
 }
 

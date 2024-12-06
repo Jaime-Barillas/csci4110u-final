@@ -208,13 +208,24 @@ vec3 sceneNormal(in vec3 point) {
                      k.xxx * scene(point + k.xxx*h).x);
 }
 
-vec3 sceneColor(float id) {
+vec3 sceneColor(float id, vec3 point) {
     vec3 material;
 
     if (id < 0.5) {
         material = vec3(1.0, 0.0, 1.0);
     } else if (id < 1.5) { // Body
         material = vec3(0.05, 0.10, 0.20);
+
+        //===== Section: Eye =====//
+        float d = dot(normalize(point), vec3(0, 0, 1));
+        if (d > 0.995) {
+            material = vec3(0.005); // Black pupil
+        } else if (d > 0.9) {
+            material = vec3(0.2); // White sclera
+        } else if (d > 0.89) {
+            material = vec3(0.005); // Black outline
+        }
+        //===== Section: Eye =====//
     } else if (id < 2.5) { // Arms
         material = vec3(0.05, 0.07, 0.10);
     } else if (id < 3.5) { // Red tips
@@ -303,7 +314,7 @@ void main() {
         vec3 normal = sceneNormal(point);
 
         // Base material reasoning: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=WUc39s8PI2aatbFp&t=2393
-        vec3 base_material = sceneColor(t.y);
+        vec3 base_material = sceneColor(t.y, point);
         vec3 sun_dir       = normalize(vec3(0.8, 0.4, 0.6));
 
         // sun_dif: Key light amount, main light, most directional.

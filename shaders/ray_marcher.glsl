@@ -86,20 +86,50 @@ vec3 castRay(in vec3 ro, in vec3 rd) {
     return vec3(t, m, i);
 }
 
-void main() {
-    // Map fragment coordinates to [-1, 1].
-    vec2 coord = ((2 * gl_FragCoord.xy) - iresolution.xy) / iresolution.y;
+void sceneLighting(in vec3 point, in vec3 ray_info, inout vec3 colour) {
+    vec3 normal = sceneNormal(point);
 
+    // Base material reasoning: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=WUc39s8PI2aatbFp&t=2393
+    vec3 base_material = sceneColor(ray_info.y, point);
+    vec3 sun_dir       = normalize(vec3(0.8, 0.4, 0.6));
+
+    // sun_dif: Key light amount, main light, most directional.
+    // sky_dif: Field light amount (sky).
+    // NOTE: sky_dif and bounce_diff is biased such that some of the light
+    //       reaches around the backside of the object.
+    float sun_dif     = clamp(dot(normal, sun_dir)        , 0.0, 1.0);
+    float sky_dif     = clamp(0.5 + 0.5 * dot(normal,  UP), 0.0, 1.0);
+    float bounce_diff = clamp(0.5 + 0.5 * dot(normal, -UP), 0.0, 1.0);
+    // NOTE: p + normal * EPS offsets the ray origin to prevent self intersection.
+    float sun_sha     = step(castRay(point + (normal * EPS), sun_dir).y, 0.0);
+
+    // Key light intensity ~10, Field light (sky) ~1. See youtube video above.
+    // Bounce light: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=DyACc5QO-klYfaRR&t=2558
+    colour  = base_material * vec3(7.0, 4.5, 3.0) * sun_dif * sun_sha;
+    colour += base_material * vec3(0.5, 0.8, 0.9) * sky_dif;
+    colour += base_material * vec3(0.7, 0.3, 0.2) * bounce_diff;
+}
+
+vec3 ray_dir(in vec3 ray_origin, in vec3 cam_target, in vec2 coord) {
     // Values taken directly from https://www.youtube.com/watch?v=Cfe5UQ-1L9Q&list=PL0EpikNmjs2CYUMePMGh3IjjP4tQlYqji
-    float cam_angle = imouse.z == 1 ? (10.0 * imouse.x) / iresolution.x : 0.0;//itime;
-    vec3 ro         = vec3(1.0 * sin(cam_angle), 0.0, 1.0 * cos(cam_angle));
-    vec3 cam_target = vec3(0.0, 0.0, 0.0);
-    vec3 forward    = normalize(cam_target - ro);
+    vec3 forward    = normalize(cam_target - ray_origin);
     vec3 right      = normalize(cross(forward, UP));
     vec3 up         = normalize(cross(right, forward));
     vec3 rd         = normalize(coord.x * right +
                                 coord.y * up    +
                                 CAM_DEP * forward);
+    return rd;
+}
+
+void main() {
+    // Map fragment coordinates to [-1, 1].
+    vec2 coord = ((2 * gl_FragCoord.xy) - iresolution.xy) / iresolution.y;
+
+    // Values taken directly from https://www.youtube.com/watch?v=Cfe5UQ-1L9Q&list=PL0EpikNmjs2CYUMePMGh3IjjP4tQlYqji
+    float cam_angle = imouse.z == 1 ? -(10.0 * imouse.x) / iresolution.x : 0.0;
+    vec3 ro         = vec3(1.0 * sin(cam_angle), 0.0, 1.0 * cos(cam_angle));
+    vec3 cam_target = vec3(0.0, 0.0, 0.0);
+    vec3 rd         = ray_dir(ro, cam_target, coord);
 
     // Sky blue. Darker at the top
     vec3 colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y;
@@ -108,27 +138,7 @@ void main() {
     vec3 t = castRay(ro, rd);
     if (t.y > 0.0) {
         vec3 point  = ro + t.x*rd;
-        vec3 normal = sceneNormal(point);
-
-        // Base material reasoning: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=WUc39s8PI2aatbFp&t=2393
-        vec3 base_material = sceneColor(t.y, point);
-        vec3 sun_dir       = normalize(vec3(0.8, 0.4, 0.6));
-
-        // sun_dif: Key light amount, main light, most directional.
-        // sky_dif: Field light amount (sky).
-        // NOTE: sky_dif and bounce_diff is biased such that some of the light
-        //       reaches around the backside of the object.
-        float sun_dif     = clamp(dot(normal, sun_dir)        , 0.0, 1.0);
-        float sky_dif     = clamp(0.5 + 0.5 * dot(normal,  UP), 0.0, 1.0);
-        float bounce_diff = clamp(0.5 + 0.5 * dot(normal, -UP), 0.0, 1.0);
-        // NOTE: p + normal * EPS offsets the ray origin to prevent self intersection.
-        float sun_sha     = step(castRay(point + (normal * EPS), sun_dir).y, 0.0);
-
-        // Key light intensity ~10, Field light (sky) ~1. See youtube video above.
-        // Bounce light: https://www.youtube.com/live/Cfe5UQ-1L9Q?si=DyACc5QO-klYfaRR&t=2558
-        colour  = base_material * vec3(7.0, 4.5, 3.0) * sun_dif * sun_sha;
-        colour += base_material * vec3(0.5, 0.8, 0.9) * sky_dif;
-        colour += base_material * vec3(0.7, 0.3, 0.2) * bounce_diff;
+        sceneLighting(point, t, colour);
     }
 
     // Gamma correction. 0.4545 ~standard encoding for computer displays/sRGB.

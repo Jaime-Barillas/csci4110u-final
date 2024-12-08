@@ -115,9 +115,10 @@ public:
     shader_manager.compileAndWatch({
       .name = "scene",
       .shaders = {
-        Shader{.path = "shaders/vert.glsl", .type = GL_VERTEX_SHADER},
-        Shader{.path = "shaders/sdf.glsl",  .type = GL_FRAGMENT_SHADER},
-        Shader{.path = "shaders/frag.glsl", .type = GL_FRAGMENT_SHADER}
+        Shader{.path = "shaders/vert.glsl",        .type = GL_VERTEX_SHADER},
+        Shader{.path = "shaders/sdf.glsl",         .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/ray_marcher.glsl", .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/scene.glsl",       .type = GL_FRAGMENT_SHADER}
       }
     });
     shader_manager.compileAndWatch({

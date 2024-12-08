@@ -6,6 +6,8 @@ const float EPS            = 0.001;
 const float CAM_DEP        = 1.5;  // Near "plane" is 1.5 units from the camera
 const float FAR            = 20.0;
 const float UNKNOWN_MAT    = 0.0; // Material ID of unknown/no object
+const float PI             = 3.1415;
+const float TAU            = 6.2831;
 
 const vec3 UP = vec3(0.0, 1.0, 0.0);
 /***** Constants *****/
@@ -20,11 +22,16 @@ uniform float itime_delta;
 /***** SDF Declarations *****/
 float sdfOpExtrude(in vec3 point, in float d, in float amount);
 vec3 sdfOpTwistY(in vec3 point, in float amount);
+vec2 sdfOpRepeat2D(in vec2 point, in vec2 scale);
+vec2 sdfOpRepeat2DClamped(in vec2 point, in vec2 scale, in vec2 limit);
 
 float sdfSphere(in vec3 point, in float radius);
 float sdfBox(in vec3 point, in vec3 half_size);
 float sdfHorseshoe2D(in vec2 point, in vec2 curve, in float inner_radius, in vec2 arm_dimensions);
 float sdfCutSphere(in vec3 point, in float radius, in float height);
+float sdfVerticalCapsule(in vec3 point, in float height, in float offset);
+float sdfCone(in vec3 point, in vec2 cs_angle, in float height);
+float sdfVesica2D(vec2 p, float r, float d);
 /***** SDF Declarations *****/
 
 layout(location = 0) out vec4 frag_colour;
@@ -33,6 +40,72 @@ layout(location = 1) out vec4 iteration_colour;
 // Transformation matrix for Magnemite.
 mat4 magnemite_tx = mat4(1.0);
 vec4 magnemite_translation = vec4(0, 0, 0, 1);
+
+//===== Section: DrawGrass =====//
+float drawGrass(in vec3 point) {
+    point.y -= -0.8;
+
+    vec3 point_r = point;
+    point_r.xz = sdfOpRepeat2DClamped(point_r.xz, vec2(0.1, 0.1), vec2(1, 1));
+    // Values experimentally determined.
+    float grass_grouped = sdfVesica2D(point_r.xy, 0.5, 0.707) - 0.25;
+    grass_grouped = sdfOpExtrude(point_r, grass_grouped, 0.02);
+
+    vec3 point_h = point;
+    point_h.x = abs(point_h.x);
+    point_h.x -= 0.19;
+    float grass_h = sdfVesica2D(point_h.xy, 0.5, 0.707) -0.25;
+    grass_h = sdfOpExtrude(point_h, grass_h, 0.02);
+
+    vec3 point_v = point;
+    point_v.z = abs(point_v.z);
+    point_v.z -= 0.19;
+    float grass_v = sdfVesica2D(point_v.xy, 0.5, 0.707) -0.25;
+    grass_v = sdfOpExtrude(point_v, grass_v, 0.02);
+
+    return min(grass_grouped, min(grass_h, grass_v));
+}
+//===== Section: DrawGrass =====//
+
+//===== Section: DrawTree =====//
+vec2 drawTree(in vec3 point) {
+    vec2 res;
+
+    float trunk_height = 0.2;
+    float trunk_radius = 0.05;
+    float leaf_height = 0.25;
+    float leaf_angle = PI / 3.2;
+
+    float trunk = sdfVerticalCapsule(point, trunk_height, trunk_radius);
+
+    vec2 sc = vec2(sin(leaf_angle), cos(leaf_angle));
+    point.y -= trunk_height + leaf_height;
+    float cone1 = sdfCone(point, sc, leaf_height);
+    leaf_height -= 0.05;
+    point.y -= leaf_height / 3;
+    float cone2 = sdfCone(point, sc, leaf_height);
+    leaf_height -= 0.05;
+    point.y -= leaf_height / 3;
+    float cone3 = sdfCone(point, sc, leaf_height);
+    float leaves = min(cone1, min(cone2, cone3));
+
+    if (trunk < leaves) {
+        res = vec2(trunk, 7.0);
+    } else {
+        res = vec2(leaves, 8.0);
+    }
+    return res;
+}
+//===== Section: DrawTree =====//
+
+//===== Section: DrawCloud =====//
+float drawCloud(in vec3 point) {
+    vec3 box_half_size = vec3(0.2, 0.03, 0.1);
+
+    float cloud = sdfBox(point, box_half_size) - 0.02;
+    return cloud;
+}
+//===== Section: DrawCloud =====//
 
 vec2 scene(in vec3 point) {
     vec2 res = vec2(FAR, UNKNOWN_MAT);
@@ -48,7 +121,7 @@ vec2 scene(in vec3 point) {
     );
 
     // Time ascension animation to 1 second minus 0.5 (pokemon at center screen @0.5)
-    float x = fract(itime/6.28318 - 0.5);
+    float x = fract(itime/TAU - 0.5);
     x = (x - 0.5) * 3;  // offset curve to center 0 at every 0.5 of a sec. Scale vertically too.
     x = x * x * x * x * x; // x_x quintic curve.
     magnemite_translation = vec4(0, x, 0, 1);
@@ -64,7 +137,7 @@ vec2 scene(in vec3 point) {
     //===== Section: Magnemite-Body =====//
 
     //===== Section: Magnemite-Arms =====//
-    float arm_curve = 3.14 / 2; // ~90deg for both upper and lower segment -> 180deg -> U-shape.
+    float arm_curve = PI / 2; // ~90deg for both upper and lower segment -> 180deg -> U-shape.
     float arm_radius = 0.05;
     float arm_thickness = 0.02;
     float arm_length = 0.10;
@@ -131,15 +204,15 @@ vec2 scene(in vec3 point) {
     //===== Section: Magnemite-Screw-Bottom-Left =====//
     vec3 screwb_half_size = vec3(0.012, body_radius*0.2, 0.012);
     vec3 screw_p = magnemite_point - vec3(-body_radius/3, 0, -0.02);
-    float c = cos(3.14*1/8);
-    float s = sin(3.14*1/8);
+    float c = cos(PI*1/8);
+    float s = sin(PI*1/8);
     screw_p = screw_p * mat3(
          c, 0, s,
          0, 1, 0,
         -s, 0, c
     );
-    c = cos(3.14*5/8);
-    s = sin(3.14*5/8);
+    c = cos(PI*5/8);
+    s = sin(PI*5/8);
     screw_p = screw_p * mat3(
         1,  0, 0,
         0,  c, s,
@@ -165,15 +238,15 @@ vec2 scene(in vec3 point) {
     //===== Section: Magnemite-Screws-Bottom-Left =====//
     //===== Section: Magnemite-Screw-Bottom-Right =====//
     screw_p = magnemite_point - vec3(body_radius/3, 0, -0.02);
-    c = cos(3.14*1/8);
-    s = sin(3.14*1/8);
+    c = cos(PI*1/8);
+    s = sin(PI*1/8);
     screw_p = screw_p * mat3(
         c, 0, -s,
         0, 1,  0,
         s, 0,  c
     );
-    c = cos(3.14*5/8);
-    s = sin(3.14*5/8);
+    c = cos(PI*5/8);
+    s = sin(PI*5/8);
     screw_p = screw_p * mat3(
         1,  0, 0,
         0,  c, s,
@@ -197,6 +270,45 @@ vec2 scene(in vec3 point) {
     screwb_top = max(-screwb_hole, min(screwb_body, screwb_head));
     if (screwb_top < res.x) res = vec2(screwb_top, 5.0);
     //===== Section: Magnemite-Screws-Bottom-Right =====//
+
+    //===== Section: Grass =====//
+    float bend_factor = sin(itime/2);
+    float fy = fract(point.y);
+    mat3 rot = mat3(
+         5/13.0,  0.0, 12/13.0,
+         0.0,     1.0, 0.0,
+        -12/13.0, 0.0, 5/13.0
+    );
+
+    vec3 grass_point = point;
+    grass_point.x -= -fy*fy*fy * (bend_factor*bend_factor); // Bend grass
+    grass_point = rot * grass_point;
+    grass_point.xz = sdfOpRepeat2D(grass_point.xz, vec2(0.8, 0.8));
+    float grass = drawGrass(grass_point);
+    if (grass < res.x) res = vec2(grass, 6.0);
+    //===== Section: Grass =====//
+
+    //===== Section: Tree =====//
+    if (point.z < -2) {
+        vec3 tree_point = point;
+        tree_point.y -= -0.8;
+        tree_point *= 0.5;
+        tree_point.xz = sdfOpRepeat2D(tree_point.xz, vec2(0.8));
+        vec2 tree = drawTree(tree_point);
+        tree.x /= 0.5;
+        if (tree.x < res.x) res = tree;
+    }
+    //===== Section: Tree =====//
+
+    //===== Section: Cloud =====//
+    vec3 cloud_point = point;
+    cloud_point.x -= -itime / 100;
+    cloud_point.y -= 1;
+    cloud_point.z -= itime / 200;
+    cloud_point.xz = sdfOpRepeat2D(cloud_point.xz, vec2(3.0));
+    float cloud = drawCloud(cloud_point);
+    if (cloud < res.x) res = vec2(cloud, 9.0);
+    //===== Section: Cloud =====//
 
     //===== Section: Ground-Plane =====//
     float plane_y_pos = -0.8;
@@ -246,6 +358,14 @@ vec3 sceneColor(float id, vec3 point) {
         material = vec3(0.02, 0.02, 0.15);
     } else if (id < 5.5) { // Screws
         material = vec3(0.08, 0.10, 0.12);
+    } else if (id < 6.5) { // Grass
+        material = vec3(0.04, 0.20, 0.02);
+    } else if (id < 7.5) { // Tree
+        material = vec3(0.04, 0.03, 0.00);
+    } else if (id < 8.5) { // Tree leaves
+        material = vec3(0.01, 0.05, 0.01);
+    } else if (id < 9.5) { // Cloud
+        material = vec3(0.30, 0.30, 0.30);
     } else {
         material = vec3(0.05, 0.07, 0.10);
     }

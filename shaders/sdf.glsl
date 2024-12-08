@@ -31,6 +31,18 @@ vec3 sdfOpTwistY(in vec3 point, in float amount) {
 }
 //===== Section: sdfOpTwist =====//
 
+//===== Section: sdfOpRepeat2D =====//
+vec2 sdfOpRepeat2D(in vec2 point, in vec2 scale) {
+    return point - (scale * round(point / scale));
+}
+//===== Section: sdfOpRepeat2D =====//
+
+//===== Section: sdfOpRepeat2DClamped =====//
+vec2 sdfOpRepeat2DClamped(in vec2 point, in vec2 scale, in vec2 limit) {
+    return point - (scale * clamp(round(point / scale), -limit, limit));
+}
+//===== Section: sdfOpRepeat2DClamped =====//
+
 
 float sdfSphere(in vec3 point, in float radius) {
     return length(point) - radius;
@@ -64,5 +76,26 @@ float sdfCutSphere(in vec3 p, in float r, in float h) {
     return (s<0.0) ? length(q)-r :
            (q.x<w) ? h - q.y     :
                      length(q-vec2(w,h));
+}
+
+float sdfVerticalCapsule(in vec3 point, in float height, in float offset) {
+    // height = height from bottom.
+    point.y -= clamp(point.y, 0.0, height);
+    return length(point) - offset;
+}
+
+// Not exact distance: https://iquilezles.org/articles/distfunctions/
+float sdfCone(in vec3 point, in vec2 sc_angle, in float height) {
+    // sc_angle = sine, cosine of angle at base.
+    float q = length(point.xz);
+    return max(dot(sc_angle, vec2(q, point.y)), -height - point.y);
+}
+
+float sdfVesica2D(vec2 p, float r, float d)
+{
+    p = abs(p);
+    float b = sqrt(r*r-d*d);
+    return ((p.y-b)*d>p.x*b) ? length(p-vec2(0.0,b))
+                             : length(p-vec2(-d,0.0))-r;
 }
 

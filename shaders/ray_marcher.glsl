@@ -8,6 +8,9 @@ const float FAR            = 20.0;
 const float UNKNOWN_MAT    = 0.0; // Material ID of unknown/no object
 const float PI             = 3.1415;
 const float TAU            = 6.2831;
+const int ANAGLYPH_OFF     = 0;
+const int ANAGLYPH_DOUBLE  = 1;
+const int ANAGLYPH_POSTPROCESS = 2;
 
 const vec3 UP = vec3(0.0, 1.0, 0.0);
 /***** Constants *****/
@@ -17,6 +20,7 @@ uniform vec3  imouse;  // .x/.y is mouse coord, .z is 1 or 0 if mouse left is do
 uniform vec3  iresolution;
 uniform float itime;
 uniform float itime_delta;
+uniform int ianaglyph; // 0 = off, 1 = double render.
 /***** Uniforms *****/
 
 /***** Scene Declarations *****/
@@ -121,7 +125,7 @@ vec3 ray_dir(in vec3 ray_origin, in vec3 cam_target, in vec2 coord) {
     return rd;
 }
 
-void main() {
+void render2D(out vec3 colour, out vec3 ray_info) {
     // Map fragment coordinates to [-1, 1].
     vec2 coord = ((2 * gl_FragCoord.xy) - iresolution.xy) / iresolution.y;
 
@@ -132,18 +136,63 @@ void main() {
     vec3 rd         = ray_dir(ro, cam_target, coord);
 
     // Sky blue. Darker at the top
-    vec3 colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y;
-    colour      = mix(colour, vec3(0.7, 0.75, 0.8), exp(-10.0 * rd.y));
+    colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y; // NOTE: colour is out variable.
+    colour = mix(colour, vec3(0.7, 0.75, 0.8), exp(-10.0 * rd.y));
 
-    vec3 t = castRay(ro, rd);
-    if (t.y > 0.0) {
-        vec3 point  = ro + t.x*rd;
-        sceneLighting(point, t, colour);
+    ray_info = castRay(ro, rd); // NOTE: ray_info is out variable.
+    if (ray_info.y > 0.0) {
+        vec3 point  = ro + ray_info.x*rd;
+        sceneLighting(point, ray_info, colour); // NOTE: colour is inout variable.
+    }
+}
+
+void render3D(out vec3 colour, out vec3 ray_info) {
+    vec2 coord = ((2 * gl_FragCoord.xy) - iresolution.xy) / iresolution.y;
+    float cam_angle = imouse.z == 1 ? -(10.0 * imouse.x) / iresolution.x : 0.0;
+    vec3 cam_target = vec3(0.0, 0.0, 0.0);
+    vec3 ro;
+    vec3 rd;
+    vec3 left_colour;
+    vec3 right_colour;
+
+    // Left Eye.
+    ro = vec3(0.0 - 0.01, 0.0, 1.0);
+    rd = ray_dir(ro, cam_target, coord);
+    left_colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y;
+    left_colour = mix(left_colour, vec3(0.7, 0.75, 0.8), exp(-10.0 * rd.y));
+    ray_info = castRay(ro, rd);
+    if (ray_info.y > 0.0) {
+        vec3 point  = ro + ray_info.x*rd;
+        sceneLighting(point, ray_info, left_colour);
+    }
+
+    // Right Eye.
+    ro = vec3(0.0 + 0.01, 0.0, 1.0);
+    rd = ray_dir(ro, cam_target, coord);
+    right_colour = vec3(0.4, 0.75, 1.0) - 0.6 * coord.y;
+    right_colour = mix(right_colour, vec3(0.7, 0.75, 0.8), exp(-10.0 * rd.y));
+    ray_info = castRay(ro, rd);
+    if (ray_info.y > 0.0) {
+        vec3 point  = ro + ray_info.x*rd;
+        sceneLighting(point, ray_info, right_colour);
+    }
+
+    colour = vec3(left_colour.r, 0.0, 0.0) + vec3(0.0, right_colour.g, right_colour.b);
+}
+
+void main() {
+    vec3 colour;
+    vec3 ray_info;
+
+    if (ianaglyph == ANAGLYPH_OFF) {
+        render2D(colour, ray_info); // NOTE: colour & ray_info are out variables.
+    } else if (ianaglyph == ANAGLYPH_DOUBLE) {
+        render3D(colour, ray_info);
     }
 
     // Gamma correction. 0.4545 ~standard encoding for computer displays/sRGB.
     colour      = pow(colour, vec3(0.4545));
     frag_colour = vec4(colour, 1);
-    iteration_colour = vec4(pow(iterationColour(t.z), vec3(0.4545)), 1.0);
+    iteration_colour = vec4(pow(iterationColour(ray_info.z), vec3(0.4545)), 1.0);
 }
 

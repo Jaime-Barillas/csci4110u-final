@@ -119,13 +119,11 @@ vec2 scene(in vec3 point) {
          0,   0,   0,  1
     );
 
-    // Time ascension animation to 1 second minus 0.5 (pokemon at center screen @0.5)
-    float x = fract(itime/TAU - 0.5);
-    x = (x - 0.5) * 3;  // offset curve to center 0 at every 0.5 of a sec. Scale vertically too.
-    x = x * x * x * x * x; // x_x quintic curve.
-    magnemite_translation = vec4(0, x, 0, 1);
+    float ty = rs * 0.2;
+    //magnemite_translation = vec4(0, x, 0, 1);
+    magnemite_translation = vec4(0, ty, 0.35, 1);
 
-    magnemite_tx = roty;
+    //magnemite_tx = roty;
     magnemite_tx[3] = -magnemite_translation;
     vec3 magnemite_point = (magnemite_tx * vec4(point, 1.0)).xyz;
 

@@ -21,9 +21,9 @@
 #include "window.hpp"
 #include "shader_manager.hpp"
 
-#define MODE_3D_NONE 1
-#define MODE_3D_LAYERED 2
-#define MODE_3D_FULL 3
+#define MODE_3D_NONE 0
+#define MODE_3D_DOUBLE 1
+#define MODE_3D_POSTPROCESS 2
 
 class Program : public Window {
   ImGuiIO *io;
@@ -206,10 +206,12 @@ public:
     GLuint iresolution = glGetUniformLocation(scene, "iresolution");
     GLuint itime = glGetUniformLocation(scene, "itime");
     GLuint itime_delta = glGetUniformLocation(scene, "itime_delta");
+    GLuint ianaglyph = glGetUniformLocation(scene, "ianaglyph");
     glUniform3fv(imouse, 1, glm::value_ptr(mouse_pos));
     glUniform3fv(iresolution, 1, glm::value_ptr(resolution));
     glUniform1f(itime, time);
     glUniform1f(itime_delta, time_delta);
+    glUniform1i(ianaglyph, mode_3d);
 
     glBindVertexArray(vao);
     glDrawBuffers(2, draw_buffers);
@@ -237,8 +239,8 @@ public:
 
         ImGui::SeparatorText("Anaglyph 3D");
         ImGui::RadioButton("None", &mode_3d, MODE_3D_NONE); ImGui::SameLine();
-        ImGui::RadioButton("Layered", &mode_3d, MODE_3D_LAYERED); ImGui::SameLine();
-        ImGui::RadioButton("Full", &mode_3d, MODE_3D_FULL);
+        ImGui::RadioButton("Double Render", &mode_3d, MODE_3D_DOUBLE); ImGui::SameLine();
+        ImGui::RadioButton("PostProcess", &mode_3d, MODE_3D_POSTPROCESS);
       }
       ImGui::End();
     }

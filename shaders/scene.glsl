@@ -38,7 +38,8 @@ vec3 castRay(in vec3 ro, in vec3 rd);
 
 // Transformation matrix for Magnemite.
 mat4 magnemite_tx = mat4(1.0);
-vec4 magnemite_translation = vec4(0, 0, 0, 1);
+mat4 magnemite_rot = mat4(1.0);
+mat4 magnemite_trans = mat4(1.0);
 
 //===== Section: DrawGrass =====//
 float drawGrass(in vec3 point) {
@@ -107,25 +108,33 @@ float drawCloud(in vec3 point) {
 //===== Section: DrawCloud =====//
 
 vec2 scene(in vec3 point) {
+    const float ANIMATION_DURATION = 2; // seconds
+
     vec2 res = vec2(FAR, UNKNOWN_MAT);
 
     // Magnemite
-    float rc = cos(itime);
-    float rs = sin(itime);
-    mat4 roty = mat4(
-         rc,  0,  rs,  0,
-         0,   1,   0,  0,
-        -rs,  0,  rc,  0,
-         0,   0,   0,  1
-    );
+    float ty = sin(itime * 2) * 0.1;
+    float ss = sin(itime * PI / ANIMATION_DURATION);
+    float square_wave = max(sign(ss), 0.0);
+    float tz = -0.5 * ss * square_wave;
 
-    float ty = rs * 0.2;
-    //magnemite_translation = vec4(0, x, 0, 1);
-    magnemite_translation = vec4(0, ty, 0.35, 1);
+    if (int(floor(itime / ANIMATION_DURATION)) % 2 != 0) {
+        float s = sin(itime * 2 * PI);
+        float c = cos(itime * 2 * PI);
+        magnemite_rot = mat4(
+             c,   s,   0,   0,
+            -s,   c,   0,   0,
+             0,   0,   1,   0,
+             0,   0,   0,   1
+        );
+    } else {
+        magnemite_rot = mat4(1.0);
+    }
+    magnemite_trans[1].w = ty;
+    magnemite_trans[2].w = tz;
 
-    //magnemite_tx = roty;
-    magnemite_tx[3] = -magnemite_translation;
-    vec3 magnemite_point = (magnemite_tx * vec4(point, 1.0)).xyz;
+    magnemite_tx = magnemite_trans * magnemite_rot;
+    vec3 magnemite_point = (vec4(point, 1.0) * magnemite_tx).xyz;
 
     //===== Section: Magnemite-Body =====//
     float body_radius = 0.15;
@@ -323,11 +332,13 @@ vec3 sceneColor(float id, vec3 point) {
         material = vec3(1.0, 0.0, 1.0);
     } else if (id < 1.5) { // Body
         material = vec3(0.05, 0.10, 0.20);
-        vec4 tp = vec4(point, 1.0) - magnemite_translation;
-        tp = magnemite_tx * normalize(tp);
+        //vec4 tp = vec4(point, 1.0) - magnemite_translation;
+        //vec4 tp = normalize(magnemite_tx * vec4(point, 1.0));
+        vec4 transformed_point = vec4(point, 1.0) * magnemite_tx;
+        vec3 n = normalize(transformed_point.xyz);
 
         //===== Section: Eye =====//
-        float d = dot(tp, vec4(0, 0, 1, 0));
+        float d = dot(n, vec3(0, 0, 1.0));
         if (d > 0.995) {
             material = vec3(0.005); // Black pupil
         } else if (d > 0.9) {

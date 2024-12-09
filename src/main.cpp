@@ -22,8 +22,8 @@
 #include "shader_manager.hpp"
 
 #define MODE_3D_NONE 0
-#define MODE_3D_DOUBLE 1
-#define MODE_3D_POSTPROCESS 2
+#define MODE_3D_NAIVE 1
+#define MODE_3D_DUBOIS 2
 
 class Program : public Window {
   ImGuiIO *io;
@@ -239,8 +239,8 @@ public:
 
         ImGui::SeparatorText("Anaglyph 3D");
         ImGui::RadioButton("None", &mode_3d, MODE_3D_NONE); ImGui::SameLine();
-        ImGui::RadioButton("Double Render", &mode_3d, MODE_3D_DOUBLE); ImGui::SameLine();
-        ImGui::RadioButton("PostProcess", &mode_3d, MODE_3D_POSTPROCESS);
+        ImGui::RadioButton("Naive", &mode_3d, MODE_3D_NAIVE); ImGui::SameLine();
+        ImGui::RadioButton("Dubois Revised", &mode_3d, MODE_3D_DUBOIS);
       }
       ImGui::End();
     }

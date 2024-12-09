@@ -9,8 +9,8 @@ const float UNKNOWN_MAT    = 0.0; // Material ID of unknown/no object
 const float PI             = 3.1415;
 const float TAU            = 6.2831;
 const int ANAGLYPH_OFF     = 0;
-const int ANAGLYPH_DOUBLE  = 1;
-const int ANAGLYPH_POSTPROCESS = 2;
+const int ANAGLYPH_NAIVE   = 1;
+const int ANAGLYPH_DUBOIS  = 2;
 
 const vec3 UP = vec3(0.0, 1.0, 0.0);
 /***** Constants *****/
@@ -146,14 +146,12 @@ void render2D(out vec3 colour, out vec3 ray_info) {
     }
 }
 
-void render3D(out vec3 colour, out vec3 ray_info) {
+void render3D(out vec3 left_colour, out vec3 right_colour, out vec3 ray_info) {
     vec2 coord = ((2 * gl_FragCoord.xy) - iresolution.xy) / iresolution.y;
     float cam_angle = imouse.z == 1 ? -(10.0 * imouse.x) / iresolution.x : 0.0;
     vec3 cam_target = vec3(0.0, 0.0, 0.0);
     vec3 ro;
     vec3 rd;
-    vec3 left_colour;
-    vec3 right_colour;
 
     // Left Eye.
     ro = vec3(0.0 - 0.01, 0.0, 1.0);
@@ -176,8 +174,6 @@ void render3D(out vec3 colour, out vec3 ray_info) {
         vec3 point  = ro + ray_info.x*rd;
         sceneLighting(point, ray_info, right_colour);
     }
-
-    colour = vec3(left_colour.r, 0.0, 0.0) + vec3(0.0, right_colour.g, right_colour.b);
 }
 
 void main() {
@@ -186,8 +182,29 @@ void main() {
 
     if (ianaglyph == ANAGLYPH_OFF) {
         render2D(colour, ray_info); // NOTE: colour & ray_info are out variables.
-    } else if (ianaglyph == ANAGLYPH_DOUBLE) {
-        render3D(colour, ray_info);
+    } else {
+        vec3 left_colour;
+        vec3 right_colour;
+        render3D(left_colour, right_colour, ray_info);
+
+        if (ianaglyph == ANAGLYPH_NAIVE) {
+            vec3 left_filter = vec3(1.0, 0.0, 0.0);
+            vec3 right_filter = vec3(0.0, 1.0, 1.0);
+            colour = left_colour * left_filter + right_colour * right_filter;
+        } else if (ianaglyph == ANAGLYPH_DUBOIS) {
+            mat3 lf = mat3(
+                 0.4561,     0.500484,   0.176381,
+                -0.400822,  -0.0378246, -0.0157589,
+                -0.0152161, -0.0205971, -0.00546856
+            );
+            mat3 rf = mat3(
+                -0.0434706, -0.0879388, -0.00155529,
+                 0.378476,   0.73364,   -0.0184503,
+                -0.0721527, -0.112961,   1.2264
+            );
+            colour = clamp(left_colour * lf, vec3(0.0), vec3(1.0)) +
+                     clamp(right_colour * rf, vec3(0.0), vec3(1.0));
+        }
     }
 
     // Gamma correction. 0.4545 ~standard encoding for computer displays/sRGB.

@@ -142,140 +142,145 @@ vec2 scene(in vec3 point) {
     res = vec2(body, 1.0);
     //===== Section: Magnemite-Body =====//
 
-    //===== Section: Magnemite-Arms =====//
-    float arm_curve = PI / 2; // ~90deg for both upper and lower segment -> 180deg -> U-shape.
-    float arm_radius = 0.05;
-    float arm_thickness = 0.02;
-    float arm_length = 0.10;
-    vec2  arm_len_thick = vec2(arm_length, arm_thickness);
-    vec3 arm_offset = vec3(body_radius + arm_radius + arm_thickness, 0.0, 0.0);
+    // Use body as bounding volume
+    if (body - 1 < 0) {
+        //===== Section: Magnemite-Arms =====//
+        float arm_curve = PI / 2; // ~90deg for both upper and lower segment -> 180deg -> U-shape.
+        float arm_radius = 0.05;
+        float arm_thickness = 0.02;
+        float arm_length = 0.10;
+        vec2  arm_len_thick = vec2(arm_length, arm_thickness);
+        vec3 arm_offset = vec3(body_radius + arm_radius + arm_thickness, 0.0, 0.0);
 
-    vec3 arm_point = magnemite_point;
-    // Could abs(arm_point) (also include y-coord) but may not get exact SDF.
-    // See Symmetry and Bound section of: https://iquilezles.org/articles/distfunctions/
-    arm_point.x = abs(arm_point.x);
-    arm_point -= arm_offset;
-    arm_point = vec3(-arm_point.y, arm_point.x, arm_point.z); // 90deg rotation.
-    float arms2D = sdfHorseshoe2D(arm_point.xy, vec2(cos(arm_curve), sin(arm_curve)), arm_radius, arm_len_thick);
-    float arms = sdfOpExtrude(magnemite_point, arms2D, arm_thickness);
-    if (arms < res.x) res = vec2(arms, 2.0);
-    //===== Section: Magnemite-Arms =====//
 
-    //===== Section: Magnemite-Tips =====//
-    vec3 tips_point = magnemite_point;
-    vec3 tips_half_size = vec3(arm_thickness);
-    vec3 tips_offset = vec3(
-        body_radius + arm_radius + arm_length + (2 * arm_thickness),
-        arm_radius + ((arm_thickness - tips_half_size.y) / 2),
-        0.0
-    );
-    tips_point.x = abs(tips_point.x);
-    if (magnemite_point.x > 0) tips_point.y = -tips_point.y; // Flip right arm tips.
-    //===== Section: Magnemite-Tips =====//
+        vec3 arm_point = magnemite_point;
+        // Could abs(arm_point) (also include y-coord) but may not get exact SDF.
+        // See Symmetry and Bound section of: https://iquilezles.org/articles/distfunctions/
+        arm_point.x = abs(arm_point.x);
+        arm_point -= arm_offset;
+        arm_point = vec3(-arm_point.y, arm_point.x, arm_point.z); // 90deg rotation.
 
-    //===== Section: Magnemite-Tips-Red =====//
-    float tips_red = sdfBox(tips_point - tips_offset, tips_half_size);
-    if (tips_red < res.x) res = vec2(tips_red, 3.0);
-    //===== Section: Magnemite-Tips-Red =====//
+        float arms2D = sdfHorseshoe2D(arm_point.xy, vec2(cos(arm_curve), sin(arm_curve)), arm_radius, arm_len_thick);
+        float arms = sdfOpExtrude(magnemite_point, arms2D, arm_thickness);
+        if (arms < res.x) res = vec2(arms, 2.0);
+        //===== Section: Magnemite-Arms =====//
 
-    //===== Section: Magnemite-Tips-Blue =====//
-    tips_offset.y = -tips_offset.y;
-    float tips_blue = sdfBox(tips_point - tips_offset, tips_half_size);
-    if (tips_blue < res.x) res = vec2(tips_blue, 4.0);
-    //===== Section: Magnemite-Tips-Blue =====//
+        //===== Section: Magnemite-Tips =====//
+        vec3 tips_point = magnemite_point;
+        vec3 tips_half_size = vec3(arm_thickness);
+        vec3 tips_offset = vec3(
+            body_radius + arm_radius + arm_length + (2 * arm_thickness),
+            arm_radius + ((arm_thickness - tips_half_size.y) / 2),
+            0.0
+        );
+        tips_point.x = abs(tips_point.x);
+        if (magnemite_point.x > 0) tips_point.y = -tips_point.y; // Flip right arm tips.
+        //===== Section: Magnemite-Tips =====//
 
-    //===== Section: Magnemite-Screw-Top =====//
-    vec3 screw_half_size = vec3(0.02, body_radius*0.3, 0.02);
-    float screw_twist = 100;
+        //===== Section: Magnemite-Tips-Red =====//
+        float tips_red = sdfBox(tips_point - tips_offset, tips_half_size);
+        if (tips_red < res.x) res = vec2(tips_red, 3.0);
+        //===== Section: Magnemite-Tips-Red =====//
 
-    vec3 screw_point = magnemite_point;
-    screw_point = sdfOpTwistY(screw_point, screw_twist);
-    screw_point -= vec3(0.0, body_radius + screw_half_size.y - 0.01, 0.0);
-    float screw_body = sdfBox(screw_point, screw_half_size) - 0.002;
+        //===== Section: Magnemite-Tips-Blue =====//
+        tips_offset.y = -tips_offset.y;
+        float tips_blue = sdfBox(tips_point - tips_offset, tips_half_size);
+        if (tips_blue < res.x) res = vec2(tips_blue, 4.0);
+        //===== Section: Magnemite-Tips-Blue =====//
 
-    vec3 screw_head_point = magnemite_point;
-    screw_head_point.y -= body_radius + screw_half_size.y - 0.035;
-    float screw_head = sdfCutSphere(screw_head_point, 0.1, 0.08) - 0.003;
+        //===== Section: Magnemite-Screw-Top =====//
+        vec3 screw_half_size = vec3(0.02, body_radius*0.3, 0.02);
+        float screw_twist = 100;
 
-    screw_head_point = magnemite_point;
-    screw_head_point.y -= 0.25;
-    float screw_hole1 = sdfBox(screw_head_point, vec3(0.040, 0.013, 0.013));
-    float screw_hole2 = sdfBox(screw_head_point, vec3(0.013, 0.013, 0.040));
-    float screw_hole = min(screw_hole1, screw_hole2);
+        vec3 screw_point = magnemite_point;
+        screw_point = sdfOpTwistY(screw_point, screw_twist);
+        screw_point -= vec3(0.0, body_radius + screw_half_size.y - 0.01, 0.0);
+        float screw_body = sdfBox(screw_point, screw_half_size) - 0.002;
 
-    float screw_top = max(-screw_hole, min(screw_body, screw_head));
-    if (screw_top < res.x) res = vec2(screw_top, 5.0);
-    //===== Section: Magnemite-Screw-Top =====//
+        vec3 screw_head_point = magnemite_point;
+        screw_head_point.y -= body_radius + screw_half_size.y - 0.035;
+        float screw_head = sdfCutSphere(screw_head_point, 0.1, 0.08) - 0.003;
 
-    //===== Section: Magnemite-Screw-Bottom-Left =====//
-    vec3 screwb_half_size = vec3(0.012, body_radius*0.2, 0.012);
-    vec3 screw_p = magnemite_point - vec3(-body_radius/3, 0, -0.02);
-    float c = cos(PI*1/8);
-    float s = sin(PI*1/8);
-    screw_p = screw_p * mat3(
-         c, 0, s,
-         0, 1, 0,
-        -s, 0, c
-    );
-    c = cos(PI*5/8);
-    s = sin(PI*5/8);
-    screw_p = screw_p * mat3(
-        1,  0, 0,
-        0,  c, s,
-        0, -s, c);
+        screw_head_point = magnemite_point;
+        screw_head_point.y -= 0.25;
+        float screw_hole1 = sdfBox(screw_head_point, vec3(0.040, 0.013, 0.013));
+        float screw_hole2 = sdfBox(screw_head_point, vec3(0.013, 0.013, 0.040));
+        float screw_hole = min(screw_hole1, screw_hole2);
 
-    vec3 screwb_point = screw_p;
-    screwb_point = sdfOpTwistY(screwb_point, screw_twist);
-    screwb_point -= vec3(0.0, body_radius + screwb_half_size.y - 0.01, 0.0);
-    float screwb_body = sdfBox(screwb_point, screwb_half_size) - 0.002;
+        float screw_top = max(-screw_hole, min(screw_body, screw_head));
+        if (screw_top < res.x) res = vec2(screw_top, 5.0);
+        //===== Section: Magnemite-Screw-Top =====//
 
-    vec3 screwb_head_point = screw_p;
-    screwb_head_point.y -= body_radius + screwb_half_size.y - 0.055;
-    float screwb_head = sdfCutSphere(screwb_head_point, 0.09, 0.08) - 0.003;
+        //===== Section: Magnemite-Screw-Bottom-Left =====//
+        vec3 screwb_half_size = vec3(0.012, body_radius*0.2, 0.012);
+        vec3 screw_p = magnemite_point - vec3(-body_radius/3, 0, -0.02);
+        float c = cos(PI*1/8);
+        float s = sin(PI*1/8);
+        screw_p = screw_p * mat3(
+             c, 0, s,
+             0, 1, 0,
+            -s, 0, c
+        );
+        c = cos(PI*5/8);
+        s = sin(PI*5/8);
+        screw_p = screw_p * mat3(
+            1,  0, 0,
+            0,  c, s,
+            0, -s, c);
 
-    screwb_head_point = screw_p;
-    screwb_head_point.y -= 0.215;
-    float screwb_hole1 = sdfBox(screwb_head_point, vec3(0.030, 0.013, 0.010));
-    float screwb_hole2 = sdfBox(screwb_head_point, vec3(0.010, 0.013, 0.030));
-    float screwb_hole = min(screwb_hole1, screwb_hole2);
+        vec3 screwb_point = screw_p;
+        screwb_point = sdfOpTwistY(screwb_point, screw_twist);
+        screwb_point -= vec3(0.0, body_radius + screwb_half_size.y - 0.01, 0.0);
+        float screwb_body = sdfBox(screwb_point, screwb_half_size) - 0.002;
 
-    float screwb_top = max(-screwb_hole, min(screwb_body, screwb_head));
-    if (screwb_top < res.x) res = vec2(screwb_top, 5.0);
-    //===== Section: Magnemite-Screws-Bottom-Left =====//
-    //===== Section: Magnemite-Screw-Bottom-Right =====//
-    screw_p = magnemite_point - vec3(body_radius/3, 0, -0.02);
-    c = cos(PI*1/8);
-    s = sin(PI*1/8);
-    screw_p = screw_p * mat3(
-        c, 0, -s,
-        0, 1,  0,
-        s, 0,  c
-    );
-    c = cos(PI*5/8);
-    s = sin(PI*5/8);
-    screw_p = screw_p * mat3(
-        1,  0, 0,
-        0,  c, s,
-        0, -s, c);
+        vec3 screwb_head_point = screw_p;
+        screwb_head_point.y -= body_radius + screwb_half_size.y - 0.055;
+        float screwb_head = sdfCutSphere(screwb_head_point, 0.09, 0.08) - 0.003;
 
-    screwb_point = screw_p;
-    screwb_point = sdfOpTwistY(screwb_point, screw_twist);
-    screwb_point -= vec3(0.0, body_radius + screwb_half_size.y - 0.01, 0.0);
-    screwb_body = sdfBox(screwb_point, screwb_half_size) - 0.002;
+        screwb_head_point = screw_p;
+        screwb_head_point.y -= 0.215;
+        float screwb_hole1 = sdfBox(screwb_head_point, vec3(0.030, 0.013, 0.010));
+        float screwb_hole2 = sdfBox(screwb_head_point, vec3(0.010, 0.013, 0.030));
+        float screwb_hole = min(screwb_hole1, screwb_hole2);
 
-    screwb_head_point = screw_p;
-    screwb_head_point.y -= body_radius + screwb_half_size.y - 0.055;
-    screwb_head = sdfCutSphere(screwb_head_point, 0.09, 0.08) - 0.003;
+        float screwb_top = max(-screwb_hole, min(screwb_body, screwb_head));
+        if (screwb_top < res.x) res = vec2(screwb_top, 5.0);
+        //===== Section: Magnemite-Screws-Bottom-Left =====//
+        //===== Section: Magnemite-Screw-Bottom-Right =====//
+        screw_p = magnemite_point - vec3(body_radius/3, 0, -0.02);
+        c = cos(PI*1/8);
+        s = sin(PI*1/8);
+        screw_p = screw_p * mat3(
+            c, 0, -s,
+            0, 1,  0,
+            s, 0,  c
+        );
+        c = cos(PI*5/8);
+        s = sin(PI*5/8);
+        screw_p = screw_p * mat3(
+            1,  0, 0,
+            0,  c, s,
+            0, -s, c);
 
-    screwb_head_point = screw_p;
-    screwb_head_point.y -= 0.215;
-    screwb_hole1 = sdfBox(screwb_head_point, vec3(0.030, 0.013, 0.010));
-    screwb_hole2 = sdfBox(screwb_head_point, vec3(0.010, 0.013, 0.030));
-    screwb_hole = min(screwb_hole1, screwb_hole2);
+        screwb_point = screw_p;
+        screwb_point = sdfOpTwistY(screwb_point, screw_twist);
+        screwb_point -= vec3(0.0, body_radius + screwb_half_size.y - 0.01, 0.0);
+        screwb_body = sdfBox(screwb_point, screwb_half_size) - 0.002;
 
-    screwb_top = max(-screwb_hole, min(screwb_body, screwb_head));
-    if (screwb_top < res.x) res = vec2(screwb_top, 5.0);
-    //===== Section: Magnemite-Screws-Bottom-Right =====//
+        screwb_head_point = screw_p;
+        screwb_head_point.y -= body_radius + screwb_half_size.y - 0.055;
+        screwb_head = sdfCutSphere(screwb_head_point, 0.09, 0.08) - 0.003;
+
+        screwb_head_point = screw_p;
+        screwb_head_point.y -= 0.215;
+        screwb_hole1 = sdfBox(screwb_head_point, vec3(0.030, 0.013, 0.010));
+        screwb_hole2 = sdfBox(screwb_head_point, vec3(0.010, 0.013, 0.030));
+        screwb_hole = min(screwb_hole1, screwb_hole2);
+
+        screwb_top = max(-screwb_hole, min(screwb_body, screwb_head));
+        if (screwb_top < res.x) res = vec2(screwb_top, 5.0);
+        //===== Section: Magnemite-Screws-Bottom-Right =====//
+    }
 
     //===== Section: Grass =====//
     float bend_factor = sin(itime/2);

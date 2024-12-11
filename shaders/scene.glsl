@@ -334,10 +334,10 @@ vec3 sceneColor(float id, vec3 point) {
         material = vec3(0.05, 0.10, 0.20);
         //vec4 tp = vec4(point, 1.0) - magnemite_translation;
         //vec4 tp = normalize(magnemite_tx * vec4(point, 1.0));
+        //===== Section: Eye =====//
         vec4 transformed_point = vec4(point, 1.0) * magnemite_tx;
         vec3 n = normalize(transformed_point.xyz);
 
-        //===== Section: Eye =====//
         float d = dot(n, vec3(0, 0, 1.0));
         if (d > 0.995) {
             material = vec3(0.005); // Black pupil

@@ -78,18 +78,22 @@ float sdfCutSphere(in vec3 p, in float r, in float h) {
                      length(q-vec2(w,h));
 }
 
+//===== Section: sdfVerticalCapsule =====//
 float sdfVerticalCapsule(in vec3 point, in float height, in float offset) {
     // height = height from bottom.
     point.y -= clamp(point.y, 0.0, height);
     return length(point) - offset;
 }
+//===== Section: sdfVerticalCapsule =====//
 
+//===== Section: sdfCone =====//
 // Not exact distance: https://iquilezles.org/articles/distfunctions/
 float sdfCone(in vec3 point, in vec2 sc_angle, in float height) {
     // sc_angle = sine, cosine of angle at base.
     float q = length(point.xz);
     return max(dot(sc_angle, vec2(q, point.y)), -height - point.y);
 }
+//===== Section: sdfCone =====//
 
 float sdfVesica2D(vec2 p, float r, float d)
 {

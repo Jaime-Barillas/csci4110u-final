@@ -1,0 +1,36 @@
+iq-video:
+  type: video
+  title: "LIVE Coding \"Happy Jumping\""
+  author: Inigo Quilez
+  date: 2019-08-13
+  url: "https://www.youtube.com/live/Cfe5UQ-1L9Q"
+
+sdf-2D:
+  type: web
+  title: "2D distance functions"
+  author: Inigo Quilez
+  url: "https://iquilezles.org/articles/distfunctions2d/"
+
+sdf-3D:
+  type: web
+  title: "distance functions"
+  author: Inigo Quilez
+  url: "https://iquilezles.org/articles/distfunctions/"
+
+sdf-normals:
+  type: web
+  title: "normals for an SDF"
+  author: Inigo Quilez
+  url: "https://iquilezles.org/articles/normalsSDF/"
+
+sdf-shadows:
+  type: web
+  title: "soft shadows in raymarched SDFs"
+  author: Inigo Quilez
+  url: "https://iquilezles.org/articles/rmshadows/"
+
+anaglyph:
+  type: web
+  title: "Producing Anaglyphs from Synthetic Images"
+  author: ["Sanders, William", "McAllister, David F."]
+  url: "https://ocul-it.primo.exlibrisgroup.com/permalink/01OCUL_IT/7cp26g/cdi_spie_primary_PSISDG005006000001000348000001"

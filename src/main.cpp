@@ -49,6 +49,7 @@ class Program : public Window {
     GL_COLOR_ATTACHMENT1,
   };
 
+  //===== Section: Scene-Quad =====//
   float screen_quad[6 * 3] {
     -1.0f, -1.0f, 0.0f,
      1.0f,  1.0f, 0.0f,
@@ -58,6 +59,7 @@ class Program : public Window {
      1.0f, -1.0f, 0.0f,
      1.0f,  1.0f, 0.0f,
   };
+  //===== Section: Scene-Quad =====//
 
   float screen_texcoords[6 * 2] {
     0.0f, 0.0f,
@@ -112,6 +114,7 @@ public:
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     setUpTextures();
 
+    //===== Section: Shaders =====//
     shader_manager.compileAndWatch({
       .name = "scene",
       .shaders = {
@@ -128,6 +131,7 @@ public:
         Shader{.path = "shaders/screen-frag.glsl", .type = GL_FRAGMENT_SHADER},
       }
     });
+    //===== Section: Shaders =====//
 
     // Debug Menu.
     mode_3d = MODE_3D_NONE;
@@ -147,6 +151,7 @@ public:
   }
 
   void setUpTextures() {
+    //===== Section: setUpTextures =====//
     // Safe since 0's and non-existant textures are silently ignored.
     glDeleteTextures(1, &image_texture);
     glDeleteTextures(1, &iterations_texture);
@@ -168,6 +173,7 @@ public:
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, image_texture, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, iterations_texture, 0);
+    //===== Section: setUpTextures =====//
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
       spdlog::critical("glCheckFramebufferStatus: Framebuffer is incomplete!");
     }

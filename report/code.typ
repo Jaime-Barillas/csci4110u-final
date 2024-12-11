@@ -16,7 +16,7 @@
     let new_entry = (:)
     let content = read(file)
 
-    let matches = content.matches(regex("//=+ Section(?: End)?: (?<label>[a-zA-Z_\-]+) =+//"))
+    let matches = content.matches(regex("//=+ Section(?: End)?: (?<label>[a-zA-Z_\-0-9]+) =+//"))
     let match_pairs = matches.chunks(2)
     let info = match_pairs.map(extract_info)
     for f in info {

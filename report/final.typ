@@ -233,6 +233,33 @@ operation to carve out the "+"-shaped hole.
   caption: [Twisting about the $y$ axis.]
 )
 
+Evaluating the shapes of the screws happens to be the most costly of part of
+the scene. One way to mitigate some of the cost is to avoid computing this part
+of the SDF for every pixel or step along the ray. The spherical body of the
+Magnemite (plus an offset to cover the rest of the model) can be used as a
+bounding volume to implement this optimization. This can prove a very effective
+technique: Running the program on an NVidia GeForce GTX 1050 TI Mobile GPU at a
+resolution of 1512x985 resulted in a rendering performance of 38 fps before the
+bounding volume optimization and 60fps after (capped by VSync). It should be
+noted that the SDF for the screws is not written in the most optimized manner
+to begin with, so perhaps the bounding volume optimization was not needed.
+Regardless, these results show how effective the technique can be.
+#figure(
+  raw("float body_radius = 0.15;
+float body = sdfSphere(magnemite_point, body_radius);
+res = vec2(body, 1.0);
+
+// Use body as bounding volume
+if (body - 1 < 0) {
+  // Rest of Magnemite SDF...
+}
+"),
+  caption: [
+    Use of the Magnemite body as a bounding volume for the rest of the model.
+    Line ~145 in `shaders/scene.glsl`
+  ]
+)
+
 == Colouring
 
 Each "top-level" SDF (essentially, any shape that requires its own colour)

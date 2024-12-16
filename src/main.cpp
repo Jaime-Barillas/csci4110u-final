@@ -13,7 +13,6 @@
 #include <spdlog/logger.h>
 #include <spdlog/common.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -27,6 +26,7 @@
 
 class Program : public Window {
   ImGuiIO *io;
+  int scene_id;  // Scene to load and draw.
   int mode_3d;
   bool draw_debug_menu;
   const GLubyte *renderer_name;
@@ -116,24 +116,34 @@ public:
 
     //===== Section: Shaders =====//
     shader_manager.compileAndWatch({
-      .name = "scene",
+      .name = "gundam",
       .shaders = {
-        Shader{.path = "shaders/vert.glsl",        .type = GL_VERTEX_SHADER},
-        Shader{.path = "shaders/sdf.glsl",         .type = GL_FRAGMENT_SHADER},
-        Shader{.path = "shaders/ray_marcher.glsl", .type = GL_FRAGMENT_SHADER},
-        Shader{.path = "shaders/scene.glsl",       .type = GL_FRAGMENT_SHADER}
+        Shader{.path = "shaders/util/vert.glsl",        .type = GL_VERTEX_SHADER},
+        Shader{.path = "shaders/util/sdf.glsl",         .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/util/ray_marcher.glsl", .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/gundam.glsl",           .type = GL_FRAGMENT_SHADER}
+      }
+    });
+    shader_manager.compileAndWatch({
+      .name = "magnemite",
+      .shaders = {
+        Shader{.path = "shaders/util/vert.glsl",        .type = GL_VERTEX_SHADER},
+        Shader{.path = "shaders/util/sdf.glsl",         .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/util/ray_marcher.glsl", .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/magnemite.glsl",        .type = GL_FRAGMENT_SHADER}
       }
     });
     shader_manager.compileAndWatch({
       .name = "screen",
       .shaders = {
-        Shader{.path = "shaders/screen-vert.glsl", .type = GL_VERTEX_SHADER},
-        Shader{.path = "shaders/screen-frag.glsl", .type = GL_FRAGMENT_SHADER},
+        Shader{.path = "shaders/util/screen-vert.glsl", .type = GL_VERTEX_SHADER},
+        Shader{.path = "shaders/util/screen-frag.glsl", .type = GL_FRAGMENT_SHADER},
       }
     });
     //===== Section: Shaders =====//
 
     // Debug Menu.
+    scene_id = 0;
     mode_3d = MODE_3D_NONE;
     draw_debug_menu = false;
     IMGUI_CHECKVERSION();
@@ -201,8 +211,19 @@ public:
     float time_delta = (float)(time_now - time_old);
     time_old = time_now;
 
+    GLuint scene = 0;
+    switch (scene_id) {
+      case 0:
+        scene = shader_manager.get("gundam");
+        break;
+      case 1:
+        scene = shader_manager.get("magnemite");
+        break;
+      default:
+        scene = shader_manager.get("gundam");
+    }
+
     // Render scene to FBO
-    auto scene = shader_manager.get("scene");
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(scene);
@@ -243,6 +264,10 @@ public:
         ImGui::Text("Fps: %.0f (%.3f)", io->Framerate, 1000.0f / io->Framerate);
         ImGui::Image((ImTextureID)(intptr_t)iterations_texture, image_size, ImVec2(0, 1), ImVec2(1, 0));
 
+        ImGui::SeparatorText("Scene");
+        ImGui::RadioButton("Gundam", &scene_id, 0); ImGui::SameLine();
+        ImGui::RadioButton("Magnemite", &scene_id, 1);
+
         ImGui::SeparatorText("Anaglyph 3D");
         ImGui::RadioButton("None", &mode_3d, MODE_3D_NONE); ImGui::SameLine();
         ImGui::RadioButton("Naive", &mode_3d, MODE_3D_NAIVE); ImGui::SameLine();
@@ -264,8 +289,7 @@ public:
 
 int main() {
   auto console_target = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  auto file_target = std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true);
-  spdlog::sinks_init_list targets = {file_target, console_target};
+  spdlog::sinks_init_list targets = {console_target};
   auto logger = std::make_shared<spdlog::logger>("logger", targets);
   logger->set_level(spdlog::level::trace);
   spdlog::register_logger(logger);

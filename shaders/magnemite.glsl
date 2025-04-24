@@ -312,13 +312,15 @@ vec2 scene(in vec3 point) {
     //===== Section: Tree =====//
 
     //===== Section: Cloud =====//
-    vec3 cloud_point = point;
-    cloud_point.x -= -itime / 100;
-    cloud_point.y -= 1;
-    cloud_point.z -= itime / 200;
-    cloud_point.xz = sdfOpRepeat2D(cloud_point.xz, vec2(3.0));
-    float cloud = drawCloud(cloud_point);
-    if (cloud < res.x) res = vec2(cloud, 9.0);
+    if (point.y > 0.6) {  // Saves ~three milliseconds in 3D.
+        vec3 cloud_point = point;
+        cloud_point.x -= -itime / 100;
+        cloud_point.y -= 1;
+        cloud_point.z -= itime / 200;
+        cloud_point.xz = sdfOpRepeat2D(cloud_point.xz, vec2(3.0));
+        float cloud = drawCloud(cloud_point);
+        if (cloud < res.x) res = vec2(cloud, 9.0);
+    }
     //===== Section: Cloud =====//
 
     //===== Section: Ground-Plane =====//

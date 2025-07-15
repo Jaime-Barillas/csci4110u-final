@@ -1,3 +1,13 @@
+# Rendering SDFs With Ray Marching
+
+See the [report](report/final.pdf)
+
+Some pictures of the result:
+![Magnemite floating in a field](scene.png)
+
+And in 3D (requires cyan/red anaglyph glasses to see):
+![Magnemite floating in a field in 3D](scene-anaglyph.png)
+
 # Compiling
 
 Windows:
